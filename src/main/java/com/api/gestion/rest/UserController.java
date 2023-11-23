@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.sql.SQLOutput;
 import java.util.Map;
 
 @RestController
@@ -21,15 +20,26 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/sing-up")
+    @PostMapping("/signup")
     public ResponseEntity<String> registrarUsuario(@RequestBody(required = true) Map<String, String> requestMap) {
 
         try {
-            return userService.singUp(requestMap);
+            return userService.signUp(requestMap);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return FacturaUtils.getResponseEntity(FacturaConstantes.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody(required = true) Map<String, String> requestMap) {
+        try {
+            return userService.login(requestMap);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return FacturaUtils.getResponseEntity(FacturaConstantes.SOMETHING_WENT_WRONG, HttpStatus.INTERNAL_SERVER_ERROR);
+
     }
 
 }
