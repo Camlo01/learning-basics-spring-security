@@ -27,16 +27,14 @@ public class CustomerDetailsService implements UserDetailsService {
 
         userDetail = userDAO.findByEmail(username);
 
-        System.out.println(userDetail.toString());
-
-        if (!Objects.isNull(userDetail)){
+        if (!Objects.isNull(userDetail)) {
             return new org.springframework.security.core.userdetails.User(userDetail.getEmail(), userDetail.getPassword(), new ArrayList<>());
-        }else{
+        } else {
             throw new UsernameNotFoundException("Usuario no encontrado");
         }
     }
 
-    public User getUserDetail(){
+    public User getUserDetail() {
         return userDetail;
     }
 
