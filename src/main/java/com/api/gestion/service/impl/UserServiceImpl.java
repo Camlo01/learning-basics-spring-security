@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -35,6 +37,8 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public ResponseEntity<String> signUp(Map<String, String> requestMap) {
@@ -63,8 +67,11 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<String> login(Map<String, String> requestMap) {
         log.info("Intento de inicio de sesión por parte del usuario {}", requestMap);
 
+        if (!emailExist(requestMap.get("email"))){
+            return new ResponseEntity<>("{\"mensaje\":\"Parece que aún no hay ninguna cuenta creada para este email\"}", HttpStatus.BAD_REQUEST);
+        }
+
         try {
-            //Mensaje de error - There is no PasswordEncoder mapped for the id "null"
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(requestMap.get("email"), requestMap.get("password"))
             );
@@ -72,13 +79,16 @@ public class UserServiceImpl implements UserService {
             if (authentication.isAuthenticated()) {
                 if (customerDetailsService.getUserDetail().getStatus().equalsIgnoreCase("true")) {
                     return new ResponseEntity<String>(
-                            "{\"token\": \"" +
+                            "{\"token\":\"" +
                                     jwtUtil.generateToken(
                                             customerDetailsService.getUserDetail().getEmail(),
                                             customerDetailsService.getUserDetail().getRole())
                                     + "\"}", HttpStatus.OK);
                 }
             }
+
+        } catch (BadCredentialsException bad) {
+            return new ResponseEntity<>("{\"mensaje\":\"La contraseña no coincide con el email\"}", HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             log.error("{}", e);
         }
@@ -109,7 +119,10 @@ public class UserServiceImpl implements UserService {
 
         user.setNombre(requestMap.get("nombre"));
         user.setEmail(requestMap.get("email"));
-        user.setPassword(requestMap.get("password"));
+
+        String encodedPassword = passwordEncoder.encode(requestMap.get("password"));
+        user.setPassword(encodedPassword);
+
         user.setNumeroDeContacto(requestMap.get("numeroDeContacto"));
 
 //        Configurando valores propios
@@ -117,6 +130,11 @@ public class UserServiceImpl implements UserService {
         user.setStatus(String.valueOf(false));
 
         return user;
+    }
+
+
+    public boolean emailExist(String email) {
+        return (userDAO.findByEmail(email) != null);
     }
 
 }
